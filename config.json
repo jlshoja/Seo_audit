@@ -1,0 +1,59 @@
+{
+  "$schema": "./config.schema.json",
+  "site": {
+    "baseUrl": "https://luxbaz.com",
+    "sitemapUrl": "https://luxbaz.com/sitemap_index.xml"
+  },
+  "crawler": {
+    "maxPages": 500,
+    "requestTimeout": 15,
+    "delayBetweenRequests": 1.0,
+    "maxRetries": 3,
+    "backoffFactor": 1.5,
+    "userAgent": "googlebot",
+    "robotsMode": "respect",
+    "checkExternalLinks": false,
+    "externalLinkTimeout": 10,
+    "autoSample": true,
+    "sampleLimit": 3,
+    "sampleParams": [],
+    "checkCanonicals": true,
+    "checkRedirectChains": true,
+    "checkSoft404": true,
+    "checkSchema": true,
+    "checkHreflang": true,
+    "checkThinContent": true,
+    "minContentWords": 200,
+    "sitemapValidation": true
+  },
+  "speed": {
+    "auditMode": "full",
+    "formFactor": "mobile",
+    "samplesPerCategory": {
+      "product": 3,
+      "product-category": 3,
+      "blog": 2,
+      "page": 5,
+      "other": 3
+    },
+    "concurrency": 1,
+    "delayBetweenTestsMs": 1500,
+    "lighthouseTimeoutMs": 90000,
+    "lighthouseRetries": 1,
+    "urlPatterns": [
+      { "category": "product", "pattern": "/product/" },
+      { "category": "product-category", "pattern": "/category/" },
+      { "category": "cart", "pattern": "/cart" },
+      { "category": "checkout", "pattern": "/checkout" },
+      { "category": "my-account", "pattern": "/my-account" },
+      { "category": "blog", "pattern": "/blog/" },
+      { "category": "search", "pattern": "[?&]s=" }
+    ],
+    "alwaysInclude": ["https://luxbaz.com/"]
+  },
+  "report": {
+    "outputDir": "./reports",
+    "includeCharts": true,
+    "includeActionPlan": true
+  }
+}

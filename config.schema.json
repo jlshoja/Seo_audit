@@ -1,0 +1,84 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "type": "object",
+  "required": ["site", "crawler", "speed", "report"],
+  "properties": {
+    "site": {
+      "type": "object",
+      "required": ["baseUrl", "sitemapUrl"],
+      "properties": {
+        "baseUrl": { "type": "string", "format": "uri" },
+        "sitemapUrl": { "type": "string", "format": "uri" }
+      }
+    },
+    "crawler": {
+      "type": "object",
+      "required": ["maxPages", "requestTimeout", "delayBetweenRequests", "maxRetries", "backoffFactor", "userAgent", "robotsMode", "checkExternalLinks", "externalLinkTimeout", "autoSample", "sampleLimit", "sampleParams"],
+      "properties": {
+        "maxPages": { "type": "integer", "minimum": 1 },
+        "requestTimeout": { "type": "integer", "minimum": 1 },
+        "delayBetweenRequests": { "type": "number", "minimum": 0 },
+        "maxRetries": { "type": "integer", "minimum": 0 },
+        "backoffFactor": { "type": "number", "minimum": 1 },
+        "userAgent": { "type": "string", "enum": ["default", "googlebot", "chrome"] },
+        "robotsMode": { "type": "string", "enum": ["respect", "ignore"] },
+        "checkExternalLinks": { "type": "boolean" },
+        "externalLinkTimeout": { "type": "integer", "minimum": 1 },
+        "autoSample": { "type": "boolean" },
+        "sampleLimit": { "type": "integer", "minimum": 1 },
+        "sampleParams": { "type": "array", "items": { "type": "string" } },
+        "checkCanonicals": { "type": "boolean" },
+        "checkRedirectChains": { "type": "boolean" },
+        "checkSoft404": { "type": "boolean" },
+        "checkSchema": { "type": "boolean" },
+        "checkHreflang": { "type": "boolean" },
+        "checkThinContent": { "type": "boolean" },
+        "minContentWords": { "type": "integer", "minimum": 0 },
+        "sitemapValidation": { "type": "boolean" }
+      }
+    },
+    "speed": {
+      "type": "object",
+      "required": ["auditMode", "formFactor", "samplesPerCategory", "concurrency", "delayBetweenTestsMs", "lighthouseTimeoutMs", "lighthouseRetries", "urlPatterns", "alwaysInclude"],
+      "properties": {
+        "auditMode": { "type": "string", "enum": ["light", "full"] },
+        "formFactor": { "type": "string", "enum": ["mobile", "desktop"] },
+        "samplesPerCategory": {
+          "type": "object",
+          "properties": {
+            "product": { "type": "integer", "minimum": 0 },
+            "product-category": { "type": "integer", "minimum": 0 },
+            "blog": { "type": "integer", "minimum": 0 },
+            "page": { "type": "integer", "minimum": 0 },
+            "other": { "type": "integer", "minimum": 0 }
+          }
+        },
+        "concurrency": { "type": "integer", "minimum": 1 },
+        "delayBetweenTestsMs": { "type": "integer", "minimum": 0 },
+        "lighthouseTimeoutMs": { "type": "integer", "minimum": 10000 },
+        "lighthouseRetries": { "type": "integer", "minimum": 0 },
+        "urlPatterns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["category", "pattern"],
+            "properties": {
+              "category": { "type": "string" },
+              "pattern": { "type": "string" }
+            }
+          }
+        },
+        "alwaysInclude": { "type": "array", "items": { "type": "string", "format": "uri" } }
+      }
+    },
+    "report": {
+      "type": "object",
+      "required": ["outputDir", "includeCharts", "includeActionPlan"],
+      "properties": {
+        "outputDir": { "type": "string" },
+        "includeCharts": { "type": "boolean" },
+        "includeActionPlan": { "type": "boolean" }
+      }
+    }
+  }
+}

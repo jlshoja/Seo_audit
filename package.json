@@ -1,0 +1,24 @@
+{
+  "name": "seo-audit-pro",
+  "version": "1.0.0",
+  "description": "Integrated SEO Audit Tool - Technical Crawl + Core Web Vitals + Unified Reports",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "crawl": "python crawler/seo_audit.py --config config.json",
+    "speed": "node speed/seo-speed-audit.js --config config.json",
+    "report": "node report/merge-report.js --config config.json",
+    "full": "npm run crawl && npm run speed && npm run report",
+    "test": "node --experimental-vm-modules speed/seo-speed-audit.js --help"
+  },
+  "dependencies": {
+    "lighthouse": "^12.0.0",
+    "chrome-launcher": "^1.1.0",
+    "chart.js": "^4.4.4"
+  },
+  "devDependencies": {},
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "packageManager": "npm@10.0.0"
+}
