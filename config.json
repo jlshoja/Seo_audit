@@ -58,10 +58,10 @@
   },
   "ai": {
     "siteType": "ecommerce",
-    "businessGoal": "sell women's bags and accessories online",
+    "businessGoal": "sell man's and women's bags and accessories online",
     "priorityKeywords": ["luxury bags", "women bags", "office bags", "evening bags", "travel bags"],
-    "languages": ["en"],
-    "targetRegions": ["US"],
+    "languages": ["Persian"],
+    "targetRegions": ["Iran"],
     "competitors": []
   }
 }

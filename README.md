@@ -8,6 +8,8 @@ An integrated, Windows-local SEO audit tool that combines two engines into one p
 
 Everything runs locally on your Windows PC — no VPS, no paid service.
 
+> **New here?** Read the step-by-step **[How to Use guide →](docs/HOW_TO_USE.md)**.
+
 ## Project layout
 
 ```
