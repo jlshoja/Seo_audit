@@ -1,15 +1,15 @@
 # Dependencies
 node_modules/
-crawler/__pycache__/
-crawler/*.pyc
-crawler/.pytest_cache/
+src/crawler/__pycache__/
+src/crawler/*.pyc
+src/crawler/.pytest_cache/
 
 # Environment
 .env
 .env.local
 .env.*.local
 
-# Output
+# Output / results (everything generated lives in reports/)
 reports/
 *.log
 npm-debug.log*
@@ -24,23 +24,6 @@ npm-debug.log*
 .DS_Store
 Thumbs.db
 
-# Crawler state
-crawler/crawl_state.json
-crawler/*.json
-crawler/seo_issues_*.csv
-crawl_results.json
-seo_issues_summary.csv
-seo_issues_detail.csv
-crawl_state.json
-crawl_state.json.tmp
-
-# Speed audit raw data
-speed/*.json
-speed/*.html
-speed_results.json
-test-*.json
-test-*.html
-
 # Build
 dist/
 build/
@@ -49,8 +32,3 @@ build/
 # Test
 coverage/
 .nyc_output/
-
-# Sub-projects (kept as reference, not part of this repo)
-GT Metrix Made By Me/
-Site Technical Audit/
-seo-audit-skill/

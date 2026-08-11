@@ -25,7 +25,7 @@ function argValue(name, longHasValue) {
   return longHasValue && args[idx + 1] ? args[idx + 1] : null;
 }
 
-const configPath = argValue("--config", true) || path.join(__dirname, "..", "config.json");
+const configPath = argValue("--config", true) || path.join(__dirname, "..", "..", "config.json");
 const singleUrlArg = args.find((a) => a.startsWith("--url=")) || (args.includes("--url") ? args[args.indexOf("--url") + 1] : null);
 const outputArg = argValue("--output", true);
 const deviceArg = argValue("--device", true);
@@ -298,21 +298,12 @@ function resolveFromCandidates(pkg, candidates) {
 
 function candidateDirs() {
   const dirs = [];
-  // parent root node_modules (own install)
+  // project root node_modules (own install)
   dirs.push(searchRoot);
-  // bundled worker from the original project
-  const workerModule = path.join("GT Metrix Made By Me", "workers", "test-runner");
-  if (fs.existsSync(path.join(searchRoot, workerModule, "node_modules"))) {
-    dirs.push(path.join(searchRoot, workerModule));
-  }
-  const legacyModule = path.join("GT Metrix Made By Me");
-  if (fs.existsSync(path.join(searchRoot, legacyModule, "node_modules"))) {
-    dirs.push(path.join(searchRoot, legacyModule));
-  }
   return dirs;
 }
 
-const searchRoot = path.join(__dirname, "..");
+const searchRoot = path.join(__dirname, "..", "..");
 
 // ---------- Main ----------
 async function main() {
@@ -339,7 +330,7 @@ async function main() {
     process.exit(1);
   }
 
-  const outputPath = outputArg || path.join(__dirname, "..", "speed", "speed_results.json");
+  const outputPath = outputArg || path.join(__dirname, "..", "..", "reports", "speed_results.json");
 
   // Single URL mode
   if (singleUrlArg) {

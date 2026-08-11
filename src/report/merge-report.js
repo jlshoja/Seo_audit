@@ -11,7 +11,7 @@
  *   - Prioritized Action Plan
  * It mirrors the output format expected by the seo-audit skill.
  *
- * Run: node report/merge-report.js --config config.json --crawl crawler/crawl_results.json --speed speed/speed_results.json --output reports
+ * Run: node src/report/merge-report.js --config config.json --crawl reports/crawl_results.json --speed reports/speed_results.json --output reports
  */
 
 import fs from "fs";
@@ -19,7 +19,7 @@ import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const rootDir = path.join(__dirname, "..");
+const rootDir = path.join(__dirname, "..", "..");
 
 // ---------- CLI ----------
 const args = process.argv.slice(2);
@@ -33,8 +33,8 @@ function argValue(name, hasValue = true) {
 }
 
 const configPath = argValue("--config") || path.join(rootDir, "config.json");
-const crawlPath = argValue("--crawl") || path.join(rootDir, "crawler", "crawl_results.json");
-const speedPath = argValue("--speed") || path.join(rootDir, "speed", "speed_results.json");
+const crawlPath = argValue("--crawl") || path.join(rootDir, "reports", "crawl_results.json");
+const speedPath = argValue("--speed") || path.join(rootDir, "reports", "speed_results.json");
 const outputDir = argValue("--output") || path.join(rootDir, "reports");
 const outputHtmlPath = argValue("--html");
 

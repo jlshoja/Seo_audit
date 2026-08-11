@@ -5,11 +5,11 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "crawl": "python crawler/seo_audit.py --config config.json",
-    "speed": "node speed/seo-speed-audit.js --config config.json",
-    "report": "node report/merge-report.js --config config.json",
+    "crawl": "python src/crawler/seo_audit.py --config config.json --cwd reports --output crawl_results.json",
+    "speed": "node src/speed/seo-speed-audit.js --config config.json --output reports/speed_results.json",
+    "report": "node src/report/merge-report.js --config config.json --crawl reports/crawl_results.json --speed reports/speed_results.json --output reports",
     "full": "npm run crawl && npm run speed && npm run report",
-    "test": "node --experimental-vm-modules speed/seo-speed-audit.js --help"
+    "test": "node --experimental-vm-modules src/speed/seo-speed-audit.js --help"
   },
   "dependencies": {
     "lighthouse": "^12.0.0",

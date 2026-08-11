@@ -34,7 +34,9 @@ if errorlevel 1 (
 )
 
 REM --- Check npm ---
-npm --version >nul 2>&1
+REM npm.cmd on some systems swallows the rest of a batch file, so
+REM npm is always invoked through a nested cmd.exe to isolate it.
+cmd /c "npm --version" >nul 2>&1
 if errorlevel 1 (
     echo ERROR: npm not found.
     echo.
@@ -42,12 +44,15 @@ if errorlevel 1 (
     exit /b 1
 )
 
+REM --- Create the results folder ---
+if not exist "reports" mkdir "reports"
+
 REM --- Install Python deps if needed ---
 echo Checking Python dependencies...
 python -c "import requests, bs4, lxml" >nul 2>&1
 if errorlevel 1 (
-    echo Installing Python packages (requests, beautifulsoup4, lxml)...
-    pip install -r crawler\requirements.txt --quiet
+    echo Installing Python packages: requests, beautifulsoup4, lxml...
+    cmd /c "pip install -r src\crawler\requirements.txt --quiet"
     if errorlevel 1 (
         echo ERROR: Failed to install Python packages.
         echo.
@@ -56,14 +61,15 @@ if errorlevel 1 (
     )
 )
 
-REM --- Check Lighthouse availability ---
+REM --- Install Node deps (lighthouse, chrome-launcher) if needed ---
 echo Checking Lighthouse availability...
-node -e "const fs=require('fs');const paths=['node_modules/lighthouse','GT Metrix Made By Me/workers/test-runner/node_modules/lighthouse','GT Metrix Made By Me/node_modules/lighthouse'];const found=paths.filter(p=>fs.existsSync(p));if(found.length===0){console.error('lighthouse not found');process.exit(1)};console.log('lighthouse found at: '+found[0]);" 2>nul
-if errorlevel 1 (
-    echo Installing Node packages (lighthouse, chrome-launcher)...
-    npm install lighthouse chrome-launcher --no-fund --no-audit 2>&1 | findstr /v "npm WARN"
+if exist "node_modules\lighthouse" (
+    echo Lighthouse found.
+) else (
+    echo Installing Node packages: lighthouse, chrome-launcher, chart.js...
+    cmd /c "npm install --no-fund --no-audit"
     if errorlevel 1 (
-        echo ERROR: Failed to install Lighthouse. Please check your internet connection.
+        echo ERROR: Failed to install Node packages. Please check your internet connection.
         echo.
         pause
         exit /b 1
@@ -97,7 +103,7 @@ echo ============================================================
 echo.
 
 echo [1/4] Running Technical SEO Crawl...
-python crawler\seo_audit.py --config config.json --output crawler\crawl_results.json
+python src\crawler\seo_audit.py --config config.json --cwd reports --output crawl_results.json
 if errorlevel 1 (
     echo Crawl failed. Check errors above.
     goto end_script
@@ -105,7 +111,7 @@ if errorlevel 1 (
 
 echo.
 echo [2/4] Running Core Web Vitals Speed Audit...
-node speed\seo-speed-audit.js --config config.json --output speed\speed_results.json
+node src\speed\seo-speed-audit.js --config config.json --output reports\speed_results.json
 if errorlevel 1 (
     echo Speed audit failed. Check errors above.
     goto end_script
@@ -113,7 +119,7 @@ if errorlevel 1 (
 
 echo.
 echo [3/4] Merging results and building unified report...
-node report\merge-report.js --config config.json --crawl crawler\crawl_results.json --speed speed\speed_results.json --output reports
+node src\report\merge-report.js --config config.json --crawl reports\crawl_results.json --speed reports\speed_results.json --output reports
 if errorlevel 1 (
     echo Report generation failed. Check errors above.
     goto end_script
@@ -130,12 +136,12 @@ echo ============================================================
 echo  RUNNING TECHNICAL SEO CRAWL ONLY
 echo ============================================================
 echo.
-python crawler\seo_audit.py --config config.json --output crawler\crawl_results.json --report-only
+python src\crawler\seo_audit.py --config config.json --cwd reports --output crawl_results.json
 if errorlevel 1 (
     echo Crawl failed.
     goto end_script
 )
-echo Done! Check crawler\crawl_results.json and crawler\seo_issues_*.csv
+echo Done! Check reports\crawl_results.json and reports\seo_issues_*.csv
 goto end_script
 
 :run_speed_only
@@ -143,12 +149,12 @@ echo ============================================================
 echo  RUNNING CORE WEB VITALS SPEED AUDIT ONLY
 echo ============================================================
 echo.
-node speed\seo-speed-audit.js --config config.json --output speed\speed_results.json
+node src\speed\seo-speed-audit.js --config config.json --output reports\speed_results.json
 if errorlevel 1 (
     echo Speed audit failed.
     goto end_script
 )
-echo Done! Check speed\speed_results.json
+echo Done! Check reports\speed_results.json
 goto end_script
 
 :run_single_page
@@ -163,12 +169,12 @@ echo   2) Desktop
 set /p "deviceChoice=Enter choice [1-2]: "
 if "%deviceChoice%"=="2" (set device=desktop) else (set device=mobile)
 echo.
-node speed\seo-speed-audit.js --url "%url%" --device %device% --audit full --output speed\speed_results.json
+node src\speed\seo-speed-audit.js --url "%url%" --device %device% --audit full --output reports\speed_results.json
 if errorlevel 1 (
     echo Single page test failed.
     goto end_script
 )
-echo Done! Check speed\speed_results.json
+echo Done! Check reports\speed_results.json
 
 :end_script
 echo.

@@ -2,13 +2,32 @@
 
 An integrated, Windows-local SEO audit tool that combines two engines into one pipeline:
 
-1. **Technical crawler** (Python, `crawler/seo_audit.py`) — crawls the whole site as Googlebot, validating on-page + technical SEO (robots.txt, sitemap, canonicals, redirect chains, soft 404s, schema, hreflang, thin content, internal links / orphans, titles, meta descriptions, headings, images, security headers, response codes, URL structure).
-2. **Core Web Vitals engine** (Node/Lighthouse, `speed/seo-speed-audit.js`) — runs real Lighthouse tests on sampled pages (LCP, INP, CLS, TBT, TTFB, FCP, Speed Index, page size, requests, opportunities).
-3. **Merge & report builder** (`report/merge-report.js`) — combines both outputs into one unified HTML report with an executive summary, technical/on-page/content findings, speed table, and a prioritized action plan.
+1. **Technical crawler** (Python, `src/crawler/seo_audit.py`) — crawls the whole site as Googlebot, validating on-page + technical SEO (robots.txt, sitemap, canonicals, redirect chains, soft 404s, schema, hreflang, thin content, internal links / orphans, titles, meta descriptions, headings, images, security headers, response codes, URL structure).
+2. **Core Web Vitals engine** (Node/Lighthouse, `src/speed/seo-speed-audit.js`) — runs real Lighthouse tests on sampled pages (LCP, INP, CLS, TBT, TTFB, FCP, Speed Index, page size, requests, opportunities).
+3. **Merge & report builder** (`src/report/merge-report.js`) — combines both outputs into one unified HTML report with an executive summary, technical/on-page/content findings, speed table, and a prioritized action plan.
 
 Everything runs locally on your Windows PC — no VPS, no paid service.
 
----
+## Project layout
+
+```
+Seo_audit/
+├── src/               code
+│   ├── crawler/       technical SEO crawler (Python)
+│   ├── speed/         Core Web Vitals / Lighthouse engine (Node)
+│   └── report/        unified HTML report builder (Node)
+├── reports/           ALL generated results live here
+│   ├── report-*.html            unified visual report
+│   ├── raw-*.json               merged structured data
+│   ├── crawl_results.json       crawler raw output
+│   ├── speed_results.json       speed raw output
+│   ├── seo_issues_summary.csv   crawl findings summary
+│   └── seo_issues_detail.csv    per-URL crawl findings
+├── config.json        site + audit settings
+└── run.bat            one-click launcher
+```
+
+All results are written to a single `reports/` folder at the project root.
 
 ## Quick start
 
@@ -19,12 +38,10 @@ Everything runs locally on your Windows PC — no VPS, no paid service.
 You can also run the steps individually:
 
 ```
-python crawler/seo_audit.py --config config.json --output crawler/crawl_results.json
-node speed/seo-speed-audit.js --config config.json --output speed/speed_results.json
-node report/merge-report.js --config config.json --crawl crawler/crawl_results.json --speed speed/speed_results.json --output reports
+python src/crawler/seo_audit.py --config config.json --cwd reports --output crawl_results.json
+node src/speed/seo-speed-audit.js --config config.json --output reports/speed_results.json
+node src/report/merge-report.js --config config.json --crawl reports/crawl_results.json --speed reports/speed_results.json --output reports
 ```
-
----
 
 ## Config reference (`config.json`)
 
@@ -50,9 +67,9 @@ node report/merge-report.js --config config.json --crawl crawler/crawl_results.j
 | | `alwaysInclude` | URLs always tested (homepage) |
 | `report` | `outputDir` | Where the final report goes |
 
----
+## SEO audit coverage
 
-## What the report includes (mirrors the seo-audit skill)
+The tool is built to mirror the **seo-audit skill** output format:
 
 - **Executive summary** — average performance/SEO scores, issue counts by priority, top issues.
 - **Technical SEO findings** — crawlability, indexation, canonicals, redirects, sitemap, security, URL structure, schema, hreflang.
@@ -61,26 +78,18 @@ node report/merge-report.js --config config.json --crawl crawler/crawl_results.j
 - **Speed & Core Web Vitals** — per-page table with LCP/INP/CLS/TBT/TTFB/FCP + chart.
 - **Prioritized action plan** — critical fixes, high-impact improvements, quick wins.
 
-## What requires judgment (not measurable by code)
+### What requires human judgment (not measurable by code)
 
-These skill areas are handled by having an AI (or the [seo-audit skill](seo-audit-skill/SKILL.md)) interpret the output:
+These skill areas are handled by having an AI (or the seo-audit skill) interpret the output:
 
 - E-E-A-T signals & content quality
 - Keyword targeting / cannibalization
 - International SEO strategy (the crawler checks hreflang syntax, not strategy)
 - Index status (needs Google Search Console access)
 
----
-
-## Outputs
-
-- `reports/report-*.html` — the unified visual report (open in any browser).
-- `reports/raw-*.json` — merged structured data for further processing.
-- `crawler/seo_issues_summary.csv`, `crawler/seo_issues_detail.csv` — crawl findings as CSV.
-- `crawler/crawl_results.json`, `speed/speed_results.json` — raw per-engine outputs.
-
 ## Troubleshooting
 
-- **Lighthouse not found** → `run.bat` auto-installs it, or the tool falls back to the bundled worker's `node_modules`. If you're offline and no copy exists, run `npm install lighthouse chrome-launcher --no-fund --no-audit`.
-- **Crawl too slow** → lower `crawler.delayBetweenRequests`, disable `checkExternalLinks`, or raise `sampleLimit` and lower `maxPages`.
-- **Report empty** → confirm both raw JSON files have data before running the merge step.
+- **`run.bat` closes instantly** — this was a known Windows bug: the `npm.cmd` shim swallows the rest of the batch file. Fixed by calling npm through `cmd /c "npm ..."`. If you still see it, run `run.bat` from a terminal to read the error before `pause`.
+- **Lighthouse not found** — `run.bat` auto-installs Node packages on first run (`npm install`). If you're offline and no copy exists, install manually: `npm install --no-fund --no-audit`.
+- **Crawl too slow** — lower `crawler.delayBetweenRequests`, disable `checkExternalLinks`, or lower `maxPages`.
+- **Report empty** — confirm both raw JSON files have data before running the merge step.
