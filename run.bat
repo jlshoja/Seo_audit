@@ -78,12 +78,13 @@ if exist "node_modules\lighthouse" (
 
 echo.
 echo Select audit mode:
-echo   1) Full Audit (Crawl + Speed + Combined Report)
+echo   1) Full Audit (Crawl + Speed + Combined Report + AI Prompt)
 echo   2) Crawl Only (Technical SEO)
 echo   3) Speed Only (Core Web Vitals)
 echo   4) Single Page Speed Check
+echo   5) AI Analysis (build prompt from latest results)
 echo.
-set /p "choice=Enter choice [1-4]: "
+set /p "choice=Enter choice [1-5]: "
 echo.
 
 if "%choice%"=="2" (
@@ -94,6 +95,9 @@ if "%choice%"=="3" (
 )
 if "%choice%"=="4" (
     goto run_single_page
+)
+if "%choice%"=="5" (
+    goto run_ai_only
 )
 
 REM Default: Full Audit
@@ -126,8 +130,10 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/4] Done!
-echo Reports saved to: reports\
+echo [4/4] Building AI analysis prompt...
+node src\ai\analyze.js --config config.json
+echo.
+echo Done! Reports saved to: reports\
 dir /b reports\*.html 2>nul
 goto end_script
 
@@ -175,6 +181,20 @@ if errorlevel 1 (
     goto end_script
 )
 echo Done! Check reports\speed_results.json
+
+:run_ai_only
+echo ============================================================
+echo  BUILDING AI ANALYSIS PROMPT
+echo ============================================================
+echo.
+node src\ai\analyze.js --config config.json
+if errorlevel 1 (
+    echo AI analysis failed. Run an audit first, mode 1-3.
+    goto end_script
+)
+echo.
+echo Done! Open the generated reports\ai-prompt-*.md and paste it into your AI.
+goto end_script
 
 :end_script
 echo.

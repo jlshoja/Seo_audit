@@ -19,6 +19,7 @@ Seo_audit/
 ├── reports/           ALL generated results live here
 │   ├── report-*.html            unified visual report
 │   ├── raw-*.json               merged structured data
+│   ├── ai-prompt-*.md           AI judgment analysis prompt (mode 5)
 │   ├── crawl_results.json       crawler raw output
 │   ├── speed_results.json       speed raw output
 │   ├── seo_issues_summary.csv   crawl findings summary
@@ -43,6 +44,21 @@ node src/speed/seo-speed-audit.js --config config.json --output reports/speed_re
 node src/report/merge-report.js --config config.json --crawl reports/crawl_results.json --speed reports/speed_results.json --output reports
 ```
 
+### AI analysis (mode 5)
+
+Option A: prompt generator — no API key, no cost, nothing leaves your machine.
+
+1. Add an `ai` section to `config.json` with optional context:
+   `siteType`, `businessGoal`, `priorityKeywords`, `languages`, `targetRegions`, `competitors`.
+2. Run a full audit (mode 1) or `npm run ai` — it reads the latest `reports/raw-*.json` and
+   writes `reports/ai-prompt-<timestamp>.md`.
+3. Open that file and paste its contents into Claude/ChatGPT (or give it to the seo-audit skill).
+4. Save the AI's judgment report alongside your other reports.
+
+The prompt asks the AI for exactly the judgment areas code can't measure: E-E-A-T, content
+quality, keyword targeting/cannibalization, international strategy, Search Console checks,
+and a prioritized 30-day action plan.
+
 ## Config reference (`config.json`)
 
 | Section | Key | Meaning |
@@ -66,6 +82,7 @@ node src/report/merge-report.js --config config.json --crawl reports/crawl_resul
 | | `concurrency` | Parallel Lighthouse tests (raise carefully) |
 | | `alwaysInclude` | URLs always tested (homepage) |
 | `report` | `outputDir` | Where the final report goes |
+| `ai` | `priorityKeywords`, `businessGoal`, `siteType` | Context for the AI analysis prompt (mode 5) |
 
 ## SEO audit coverage
 

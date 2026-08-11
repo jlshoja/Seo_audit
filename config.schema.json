@@ -79,6 +79,18 @@
         "includeCharts": { "type": "boolean" },
         "includeActionPlan": { "type": "boolean" }
       }
+    },
+    "ai": {
+      "type": "object",
+      "description": "Context used by the AI analysis prompt generator (mode 5).",
+      "properties": {
+        "siteType": { "type": "string" },
+        "businessGoal": { "type": "string" },
+        "priorityKeywords": { "type": "array", "items": { "type": "string" } },
+        "languages": { "type": "array", "items": { "type": "string" } },
+        "targetRegions": { "type": "array", "items": { "type": "string" } },
+        "competitors": { "type": "array", "items": { "type": "string" } }
+      }
     }
   }
 }

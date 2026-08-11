@@ -8,7 +8,9 @@
     "crawl": "python src/crawler/seo_audit.py --config config.json --cwd reports --output crawl_results.json",
     "speed": "node src/speed/seo-speed-audit.js --config config.json --output reports/speed_results.json",
     "report": "node src/report/merge-report.js --config config.json --crawl reports/crawl_results.json --speed reports/speed_results.json --output reports",
+    "ai": "node src/ai/analyze.js --config config.json",
     "full": "npm run crawl && npm run speed && npm run report",
+    "audit": "npm run crawl && npm run speed && npm run report && npm run ai",
     "test": "node --experimental-vm-modules src/speed/seo-speed-audit.js --help"
   },
   "dependencies": {

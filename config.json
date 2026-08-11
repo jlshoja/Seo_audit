@@ -5,7 +5,7 @@
     "sitemapUrl": "https://luxbaz.com/sitemap_index.xml"
   },
   "crawler": {
-    "maxPages": 500,
+    "maxPages": 5000,
     "requestTimeout": 15,
     "delayBetweenRequests": 1.0,
     "maxRetries": 3,
@@ -55,5 +55,13 @@
     "outputDir": "./reports",
     "includeCharts": true,
     "includeActionPlan": true
+  },
+  "ai": {
+    "siteType": "ecommerce",
+    "businessGoal": "sell women's bags and accessories online",
+    "priorityKeywords": ["luxury bags", "women bags", "office bags", "evening bags", "travel bags"],
+    "languages": ["en"],
+    "targetRegions": ["US"],
+    "competitors": []
   }
 }
