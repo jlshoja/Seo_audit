@@ -90,6 +90,18 @@ and a prioritized 30-day action plan.
 | `report` | `outputDir` | Where the final report goes |
 | `ai` | `priorityKeywords`, `businessGoal`, `siteType` | Context for the AI analysis prompt (mode 5) |
 
+## Recovery from stale results
+
+The tool refuses to merge stale data silently:
+
+- `merge-report.js` checks the age of the `--crawl` and `--speed` files it is given.
+- Older than `--max-age-hours` (default **24h**) → merge **errors out and exits 1**, so a
+  stale report can never be produced by accident.
+- Older than `--warn-age-hours` (default **6h**) → prints a warning and stamps the source
+  ages on the report page.
+- `run.bat` deletes `crawl_results.json` / `speed_results.json` at the start of each stage,
+  so a failed run can never leave old data behind for a later merge.
+
 ## SEO audit coverage
 
 The tool is built to mirror the **seo-audit skill** output format:

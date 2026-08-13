@@ -106,6 +106,11 @@ echo  RUNNING FULL SITE AUDIT
 echo ============================================================
 echo.
 
+REM --- Start clean: remove stale stage outputs so a failed run can never leave
+REM     old data that a later merge would silently use ---
+if exist "reports\crawl_results.json" del /q "reports\crawl_results.json"
+if exist "reports\speed_results.json" del /q "reports\speed_results.json"
+
 echo [1/4] Running Technical SEO Crawl...  ^(%time%^)
 python src\crawler\seo_audit.py --config config.json --cwd reports --output crawl_results.json
 if errorlevel 1 (
@@ -142,6 +147,7 @@ echo ============================================================
 echo  RUNNING TECHNICAL SEO CRAWL ONLY
 echo ============================================================
 echo.
+if exist "reports\crawl_results.json" del /q "reports\crawl_results.json"
 python src\crawler\seo_audit.py --config config.json --cwd reports --output crawl_results.json
 if errorlevel 1 (
     echo Crawl failed.
@@ -155,6 +161,7 @@ echo ============================================================
 echo  RUNNING CORE WEB VITALS SPEED AUDIT ONLY
 echo ============================================================
 echo.
+if exist "reports\speed_results.json" del /q "reports\speed_results.json"
 node src\speed\seo-speed-audit.js --config config.json --output reports\speed_results.json
 if errorlevel 1 (
     echo Speed audit failed.

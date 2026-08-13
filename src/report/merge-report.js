@@ -37,6 +37,8 @@ const crawlPath = argValue("--crawl") || path.join(rootDir, "reports", "crawl_re
 const speedPath = argValue("--speed") || path.join(rootDir, "reports", "speed_results.json");
 const outputDir = argValue("--output") || path.join(rootDir, "reports");
 const outputHtmlPath = argValue("--html");
+const maxAgeHours = Number(argValue("--max-age-hours")) || 24;
+const warnAgeHours = Number(argValue("--warn-age-hours")) || 6;
 
 // ---------- Helpers ----------
 function escapeHtml(str) {
@@ -77,6 +79,14 @@ function loadJson(p) {
     return JSON.parse(fs.readFileSync(resolved, "utf-8"));
   } catch {
     console.warn(`Could not parse JSON: ${resolved}`);
+    return null;
+  }
+}
+
+function fileAgeHours(p) {
+  try {
+    return (Date.now() - fs.statSync(p).mtimeMs) / 3600000;
+  } catch {
     return null;
   }
 }
@@ -441,6 +451,13 @@ function buildHtml(data, config) {
     Device: ${escapeHtml(speed.mode.formFactor || "mobile")} &nbsp;|&nbsp;
     Speed mode: ${escapeHtml(speed.mode.mode || "full")}
   </div>
+  ${data.sources ? `
+  <div class="note">Data sources:
+    crawl <code>${escapeHtml(data.sources.crawlPath || "—")}</code> (${data.sources.crawlAgeHours != null ? data.sources.crawlAgeHours.toFixed(1) + "h old" : "—"}) ·
+    speed <code>${escapeHtml(data.sources.speedPath || "—")}</code> (${data.sources.speedAgeHours != null ? data.sources.speedAgeHours.toFixed(1) + "h old" : "—"}).
+    ${data.sources.crawlAgeHours != null && data.sources.crawlAgeHours > warnAgeHours ? "Re-run the crawl audit." : ""}
+    ${data.sources.speedAgeHours != null && data.sources.speedAgeHours > warnAgeHours ? "Re-run the speed audit." : ""}
+  </div>` : ""}
 
   <h2 class="section-title">Executive Summary</h2>
   <div class="kpis">
@@ -567,8 +584,36 @@ function main() {
     process.exit(1);
   }
 
+  // ---- Freshness guard: never silently merge stale data ----
+  const sources = [
+    { label: "crawl", path: crawlPath, age: fileAgeHours(crawlPath) },
+    { label: "speed", path: speedPath, age: fileAgeHours(speedPath) },
+  ].filter((s) => s.age !== null);
+
+  let staleError = false;
+  for (const s of sources) {
+    if (s.age > maxAgeHours) {
+      console.error(`\nERROR: ${s.label} data is STALE (${s.age.toFixed(1)} hours old, max allowed ${maxAgeHours}h).`);
+      console.error(`       File: ${s.path}`);
+      console.error(`       Re-run the ${s.label} audit (or delete the file) before merging.`);
+      staleError = true;
+    } else if (s.age > warnAgeHours) {
+      console.warn(`\n[!] WARNING: ${s.label} data is ${s.age.toFixed(1)} hours old. Consider re-running the ${s.label} audit for fresh results.`);
+    }
+  }
+  if (staleError) process.exit(1);
+
   console.log("Merging results...");
   const data = buildReportData(crawl, speed, config);
+  data.sources = {
+    crawlAgeHours: crawl && fileAgeHours(crawlPath),
+    speedAgeHours: speed && fileAgeHours(speedPath),
+    crawlPath: crawl ? path.basename(String(crawlPath)) : null,
+    speedPath: speed ? path.basename(String(speedPath)) : null,
+  };
+  if (speed && speed.results && speed.results.length > 0 && speed.results.length < 5) {
+    console.warn(`\n[!] WARNING: speed data has only ${speed.results.length} page(s) — this looks like a single-page test, not a full audit.`);
+  }
 
   if (!fs.existsSync(outputDir)) fs.mkdirSync(outputDir, { recursive: true });
 
