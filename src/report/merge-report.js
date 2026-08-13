@@ -115,6 +115,10 @@ const CONTENT_ISSUES = [
   "E-E-A-T"  // placeholder; E-E-A-T is AI-judged, not crawled
 ];
 
+const SCHEMA_ISSUES = [
+  "Schema:",
+];
+
 function isTechnical(name) {
   return TECHNICAL_ISSUES.some((p) => String(name).startsWith(p));
 }
@@ -123,6 +127,9 @@ function isOnpage(name) {
 }
 function isContent(name) {
   return CONTENT_ISSUES.some((p) => String(name).startsWith(p));
+}
+function isSchema(name) {
+  return SCHEMA_ISSUES.some((p) => String(name).startsWith(p));
 }
 
 const PRIORITY_ORDER = { High: 0, Medium: 1, Low: 2, high: 0, medium: 1, low: 2 };
@@ -146,7 +153,31 @@ function buildReportData(crawl, speed, config) {
   const technical = crawlIssues.filter((i) => isTechnical(i.name));
   const onpage = crawlIssues.filter((i) => isOnpage(i.name));
   const content = crawlIssues.filter((i) => isContent(i.name));
-  const other = crawlIssues.filter((i) => !isTechnical(i.name) && !isOnpage(i.name) && !isContent(i.name));
+  const schema = crawlIssues.filter((i) => isSchema(i.name));
+  const other = crawlIssues.filter((i) => !isTechnical(i.name) && !isOnpage(i.name) && !isContent(i.name) && !isSchema(i.name));
+
+  // ---- Schema coverage (from pages[].schema_types) ----
+  const pages = crawl?.pages || [];
+  const schemaPages = pages.filter((p) => (p.schema_types || []).length > 0);
+  const schemaTypesCount = {};
+  for (const p of schemaPages) {
+    for (const t of p.schema_types || []) {
+      schemaTypesCount[t] = (schemaTypesCount[t] || 0) + 1;
+    }
+  }
+  const schemaCoverage = pages.length
+    ? {
+        pagesWithSchema: schemaPages.length,
+        totalPages: pages.length,
+        pct: Math.round((100 * schemaPages.length) / pages.length),
+        types: Object.entries(schemaTypesCount)
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 10),
+      }
+    : null;
+
+  // ---- Crawl Budget Summary ----
+  const crawlBudget = crawl?.crawl_budget || null;
 
   // ---- Speed results ----
   const speedResults = speed?.results || [];
@@ -185,6 +216,7 @@ function buildReportData(crawl, speed, config) {
     generated_at: crawl?.generated_at || new Date().toISOString(),
     site,
     crawl_stats: crawl?.crawl_stats || null,
+    crawl_budget: crawlBudget,
     exec: {
       avgPerf,
       goodPerf,
@@ -203,9 +235,11 @@ function buildReportData(crawl, speed, config) {
       technical,
       onpage,
       content,
+      schema,
       other,
       summaryIssues,
     },
+    schemaCoverage,
     speed: {
       mode: speed?.speed || {},
       results: speedResults,
@@ -432,6 +466,27 @@ function buildHtml(data, config) {
   <div class="note">Crawl stats: ${data.crawl_stats.pages_fetched ?? 0} pages fetched, ${data.crawl_stats.urls_discovered ?? 0} URLs discovered,
     ${data.crawl_stats.robots_skipped ?? 0} skipped by robots.txt, ${data.crawl_stats.sample_skipped ?? 0} skipped by sampling.</div>` : ""}
 
+  ${data.crawl_budget ? `
+  <h2 class="section-title">Crawl Budget & Efficiency</h2>
+  <div class="card">
+    <div class="kpis">
+      <div class="kpi"><div class="num">${data.crawl_budget.total_discovered ?? 0}</div><div class="lbl">URLs Discovered</div></div>
+      <div class="kpi"><div class="num">${data.crawl_budget.pages_crawled ?? 0}</div><div class="lbl">Pages Crawled</div></div>
+      <div class="kpi"><div class="num" style="color:${data.crawl_budget.crawl_efficiency >= 80 ? '#0cce6b' : data.crawl_budget.crawl_efficiency >= 50 ? '#ffa400' : '#ff4e42'}">${data.crawl_budget.crawl_efficiency ?? 0}%</div><div class="lbl">Crawl Efficiency</div></div>
+      <div class="kpi"><div class="num">${data.crawl_budget.robots_txt_blocked ?? 0}</div><div class="lbl">Robots.txt Blocked</div></div>
+      <div class="kpi"><div class="num">${data.crawl_budget.sampled_out ?? 0}</div><div class="lbl">Sampled Out</div></div>
+      <div class="kpi"><div class="num">${data.crawl_budget.avg_response_time_ms ?? 0} ms</div><div class="lbl">Avg Response Time</div></div>
+    </div>
+    ${data.crawl_budget.status_codes && Object.keys(data.crawl_budget.status_codes).length ? `
+    <h3>Status Code Distribution</h3>
+    <table>
+      <thead><tr><th>Status Code</th><th>Count</th></tr></thead>
+      <tbody>
+        ${Object.entries(data.crawl_budget.status_codes).sort((a, b) => b[1] - a[1]).map(([code, count]) => `<tr><td><code>${escapeHtml(code)}</code></td><td>${count}</td></tr>`).join("")}
+      </tbody>
+    </table>` : ""}
+  </div>` : ""}
+
   <h2 class="section-title">Speed &amp; Core Web Vitals</h2>
   <div class="chart-wrap"><canvas id="scoreChart" height="80"></canvas></div>
   <table>
@@ -444,6 +499,17 @@ function buildHtml(data, config) {
   ${sectionBlock("Technical SEO Findings", "🔧", sections.technical, "No technical SEO issues found.")}
   ${sectionBlock("On-Page SEO Findings", "📄", sections.onpage, "No on-page SEO issues found.")}
   ${sectionBlock("Content Findings", "✏️", sections.content, "No content issues found.")}
+  ${data.schemaCoverage ? `
+  <h2 class="section-title">Structured Data / Schema</h2>
+  <div class="card">
+    <p>Pages with structured data: <strong>${data.schemaCoverage.pagesWithSchema}</strong> / ${data.schemaCoverage.totalPages} (${data.schemaCoverage.pct}%)</p>
+    ${data.schemaCoverage.types.length ? `
+    <table>
+      <thead><tr><th>Schema type</th><th>Pages</th></tr></thead>
+      <tbody>${data.schemaCoverage.types.map(([t, c]) => `<tr><td><code>${escapeHtml(t)}</code></td><td>${c}</td></tr>`).join("")}</tbody>
+    </table>` : ""}
+    ${sections.schema.length ? `<div style="margin-top:12px">${issueRows(sections.schema)}</div>` : ""}
+  </div>` : ""}
   ${sections.other.length ? sectionBlock("Other Findings", "📎", sections.other, "") : ""}
 
   <h2 class="section-title">Prioritized Action Plan</h2>

@@ -24,11 +24,16 @@
     "checkHreflang": true,
     "checkThinContent": true,
     "minContentWords": 200,
-    "sitemapValidation": true
+    "sitemapValidation": true,
+    "checkHttps": true,
+    "checkMixedContent": true,
+    "checkLinkDepth": true,
+    "maxLinkDepth": 3
   },
   "speed": {
     "auditMode": "full",
     "formFactor": "mobile",
+    "chromeFlags": [],
     "samplesPerCategory": {
       "product": 3,
       "product-category": 3,

@@ -38,6 +38,7 @@ function loadConfig() {
   // Flatten site + speed sections into an ease-of-use config shape
   return {
     ...(cfg.speed || {}),
+    chromeFlags: cfg.speed?.chromeFlags || [],
     baseUrl: cfg.site?.baseUrl,
     sitemapUrl: cfg.site?.sitemapUrl || (cfg.site?.baseUrl ? cfg.site.baseUrl.replace(/\/$/, "") + "/sitemap.xml" : null),
     outputDir: cfg.report?.outputDir || "./reports",
@@ -336,7 +337,7 @@ async function main() {
   if (singleUrlArg) {
     console.log(`\n== Single URL mode: ${singleUrlArg} ==`);
     const chrome = await chromeLauncher.launch({
-      chromeFlags: ["--headless=new", "--no-sandbox", "--disable-gpu"],
+      chromeFlags: ["--headless=new", "--no-sandbox", "--disable-gpu", ...config.chromeFlags],
     });
     let result;
     try {
@@ -389,7 +390,7 @@ async function main() {
 
   console.log("\n== Step 3: Running Lighthouse ==");
   const chrome = await chromeLauncher.launch({
-    chromeFlags: ["--headless=new", "--no-sandbox", "--disable-gpu"],
+    chromeFlags: ["--headless=new", "--no-sandbox", "--disable-gpu", ...config.chromeFlags],
   });
 
   let completed = 0;

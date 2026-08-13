@@ -34,7 +34,11 @@
         "checkHreflang": { "type": "boolean" },
         "checkThinContent": { "type": "boolean" },
         "minContentWords": { "type": "integer", "minimum": 0 },
-        "sitemapValidation": { "type": "boolean" }
+        "sitemapValidation": { "type": "boolean" },
+        "checkHttps": { "type": "boolean" },
+        "checkMixedContent": { "type": "boolean" },
+        "checkLinkDepth": { "type": "boolean" },
+        "maxLinkDepth": { "type": "integer", "minimum": 1 }
       }
     },
     "speed": {
@@ -43,6 +47,7 @@
       "properties": {
         "auditMode": { "type": "string", "enum": ["light", "full"] },
         "formFactor": { "type": "string", "enum": ["mobile", "desktop"] },
+        "chromeFlags": { "type": "array", "items": { "type": "string" }, "description": "Extra Chrome flags passed to headless Chrome (e.g. --disable-dev-shm-usage, --ignore-certificate-errors)" },
         "samplesPerCategory": {
           "type": "object",
           "properties": {

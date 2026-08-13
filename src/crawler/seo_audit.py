@@ -54,6 +54,12 @@ DEFAULT_CONFIG = {
     "check_thin_content": True,
     "min_content_words": 200,
     "sitemap_validation": True,
+    "check_schema_types": True,
+    "check_https": True,
+    "check_mixed_content": True,
+    "check_link_depth": True,
+    "max_link_depth": 3,
+    "page_type_patterns": {},
     "state_file": "crawl_state.json",
     "detail_csv_file": "seo_issues_detail.csv",
     "summary_csv_file": "seo_issues_summary.csv",
@@ -160,6 +166,34 @@ def is_external(url, domain):
     return urlparse(url).netloc != domain
 
 
+def classify_page_type(url, patterns=None):
+    """Guess the template type of an internal URL from its path.
+    Used for template-aware checks (e.g. products must have Product schema)."""
+    path = urlparse(url).path.lower()
+    p = patterns or {}
+    for key, keywords in p.items():
+        for kw in keywords:
+            if kw in path:
+                return key
+    if path == "/" or path == "":
+        return "home"
+    if any(seg in path for seg in ("/product/", "/p/", "/item/", "/shop/", "/goods/")):
+        return "product"
+    if any(seg in path for seg in ("/blog/", "/news/", "/article/", "/post/", "/%d8%a8%d9%84%d8%a7%da%af")):
+        return "blog"
+    if any(seg in path for seg in ("/category/", "/collections/", "/%da%af%d8%b1%d9%88%d9%87", "/%d8%af%d8%b3%d8%aa%d9%87")):
+        return "category"
+    if any(seg in path for seg in ("/cart", "/basket", "/%d8%b3%d8%a8%d8%af")):
+        return "cart"
+    if any(seg in path for seg in ("/checkout", "/%d9%be%d8%b1%d8%af%d8%a7%d8%ae%d8%aa")):
+        return "checkout"
+    if any(seg in path for seg in ("/my-account", "/account", "/login", "/register", "/%d8%ad%d8%b3%d8%a7%d8%a8")):
+        return "account"
+    if any(seg in path for seg in ("/search", "?s=", "/%d8%ac%d8%b3%d8%aa%d8%ac%d9%88")):
+        return "search"
+    return "other"
+
+
 class SEOAuditor:
     def __init__(self, config, resume=False):
         self.cfg = {**DEFAULT_CONFIG, **config}
@@ -177,6 +211,7 @@ class SEOAuditor:
 
         self.visited = set()
         self.to_visit = deque([self.start_url])
+        self.depth = {self.start_url: 0}
         self.fetched_count = 0
         self.robots_skipped_count = 0
         self.sample_skipped_count = 0
@@ -218,6 +253,11 @@ class SEOAuditor:
         loaded = False
         if self.resume and os.path.exists(self.cfg["state_file"]):
             loaded = self._load_checkpoint()
+            if loaded:
+                age_hours = (time.time() - os.path.getmtime(self.cfg["state_file"])) / 3600
+                if age_hours > 24:
+                    print(f"Warning: checkpoint is {age_hours:.1f} hours old. The site may have "
+                          "changed since; consider a fresh crawl instead of --resume.")
 
         self._open_detail_writer(append=loaded)
 
@@ -474,6 +514,9 @@ class SEOAuditor:
         self.check_cross_page_duplicates()
         self.check_canonical_cross_page()
         self.check_orphans()
+        self.check_link_depth()
+        self.check_https_hsts()
+        self.check_mixed_content()
         print(f"\nCrawl finished. Pages actually fetched: {self.fetched_count}")
         print(f"Total URLs discovered and de-duplicated: {len(self.visited)}")
         if self.robots_mode == "respect" and self.robots_skipped_count:
@@ -543,6 +586,11 @@ class SEOAuditor:
         self._current_url = url
         self._page_issue_buffer = defaultdict(list)
 
+        # Record page type and depth
+        page_type = classify_page_type(url, self.cfg.get("page_type_patterns") or None)
+        self.page_data.setdefault(url, {})["page_type"] = page_type
+        self.page_data.setdefault(url, {})["link_depth"] = self.depth.get(url, 0)
+
         try:
             resp = self.fetch_url(url)
         except requests.exceptions.Timeout as e:
@@ -560,6 +608,14 @@ class SEOAuditor:
 
         status = resp.status_code
         url_after_redirect = resp.url
+
+        self.response_times = getattr(self, "response_times", [])
+        self.response_times.append(resp.elapsed.total_seconds() * 1000)
+        self.page_data.setdefault(url, {}).update({
+            "status_code": status,
+            "final_url": url_after_redirect,
+            "response_headers": dict(resp.headers),
+        })
 
         # Redirect chain detection via resp.history (requests records each hop)
         if self.cfg["check_redirect_chains"] and len(resp.history) > 0:
@@ -596,6 +652,10 @@ class SEOAuditor:
 
         soup = BeautifulSoup(resp.text, "html.parser")
 
+        if self.cfg.get("check_mixed_content", True) and url_after_redirect.startswith("https://"):
+            self.page_data.setdefault(url, {})["mixed_content_count"] = len(
+                re.findall(r'(?:src|href)=["\']http://', resp.text, re.IGNORECASE))
+
         self.check_title(soup, url)
         self.check_meta_description(soup, url)
         self.check_headings(soup, url)
@@ -621,6 +681,7 @@ class SEOAuditor:
             if self.is_internal(href) and href not in self.visited and href.startswith("http"):
                 if href not in self.to_visit:
                     self.to_visit.append(href)
+                    self.depth[href] = self.depth.get(url, 0) + 1
 
         self._flush_page_issue_buffer()
 
@@ -707,6 +768,23 @@ class SEOAuditor:
                            f"{invalid} malformed block(s)")
         if valid:
             self.page_data.setdefault(url, {})["schema_types"] = types[:5]
+
+        # Schema validation against expected rich-result types per page type
+        if self.cfg.get("check_schema_types", True):
+            page_type = self.page_data.get(url, {}).get("page_type", "other")
+            expected = {
+                "product": {"Product", "Offer"},
+                "blog": {"Article", "BlogPosting"},
+                "category": {"ItemList", "BreadcrumbList"},
+                "home": {"Organization", "WebSite"},
+            }.get(page_type, set())
+            if expected:
+                found = set(types)
+                missing = expected - found
+                for miss in missing:
+                    self.add_issue(f"Schema: Missing {miss} Markup on {page_type.title()} Page",
+                                   "Issue", "Medium", url,
+                                   f"expected {', '.join(sorted(expected))}")
 
     # ---------- Hreflang ----------
     def check_hreflang(self, soup, url):
@@ -997,6 +1075,77 @@ class SEOAuditor:
                 self.add_issue("Links: Orphan Page (No Inbound Internal Links)",
                                "Warning", "Medium", url)
 
+    def check_link_depth(self):
+        """Detect pages more than max_link_depth clicks from homepage."""
+        if not self.cfg.get("check_link_depth", True):
+            return
+        max_depth = self.cfg.get("max_link_depth", 3)
+        for url, depth in self.depth.items():
+            if depth > max_depth:
+                self.add_issue(
+                    f"Links: Page Depth > {max_depth} Clicks from Home",
+                    "Warning", "Medium", url,
+                    detail=f"This page is {depth} clicks from the homepage (max recommended: {max_depth})"
+                )
+
+    def check_https_hsts(self):
+        """Check HTTPS enforcement, HSTS header, and mixed content."""
+        if not self.cfg.get("check_https", True):
+            return
+        for url in self.visited:
+            if url not in self.page_data:
+                continue
+            data = self.page_data[url]
+            if not data.get("final_url", "").startswith("https://"):
+                self.add_issue(
+                    "HTTPS: Page Not Served Over HTTPS",
+                    "Error", "High", url,
+                    detail=f"Page loads via HTTP: {data.get('final_url', url)}"
+                )
+            headers = data.get("response_headers", {})
+            hsts = headers.get("strict-transport-security", "")
+            if not hsts:
+                self.add_issue(
+                    "HTTPS: Missing HSTS Header",
+                    "Warning", "Medium", url,
+                    detail="Strict-Transport-Security header not present"
+                )
+            elif "max-age" not in hsts.lower():
+                self.add_issue(
+                    "HTTPS: HSTS Header Missing max-age",
+                    "Warning", "Low", url,
+                    detail=f"HSTS header present but missing max-age: {hsts}"
+                )
+
+    def check_mixed_content(self):
+        """Report HTTP resources loaded on HTTPS pages (counted during crawl)."""
+        if not self.cfg.get("check_mixed_content", True):
+            return
+        for url in self.visited:
+            data = self.page_data.get(url)
+            if not data:
+                continue
+            final_url = data.get("final_url", url)
+            if not final_url.startswith("https://"):
+                continue
+            count = data.get("mixed_content_count", 0)
+            if count:
+                self.add_issue(
+                    "HTTPS: Mixed Content Detected",
+                    "Error", "High", url,
+                    detail=f"Found {count} HTTP resource(s) on HTTPS page"
+                )
+
+    def _get_status_code_distribution(self):
+        """Get distribution of HTTP status codes from crawled pages."""
+        from collections import Counter
+        codes = []
+        for data in self.page_data.values():
+            status = data.get("status_code")
+            if status:
+                codes.append(status)
+        return dict(Counter(codes))
+
     # ---------- Export ----------
     def export_json(self, output_path):
         summary = defaultdict(lambda: [0, "", ""])
@@ -1028,6 +1177,15 @@ class SEOAuditor:
                 "urls_discovered": len(self.visited),
                 "robots_skipped": self.robots_skipped_count,
                 "sample_skipped": self.sample_skipped_count,
+            },
+            "crawl_budget": {
+                "total_discovered": len(self.visited),
+                "pages_crawled": self.fetched_count,
+                "crawl_efficiency": round(self.fetched_count / len(self.visited) * 100, 2) if self.visited else 0,
+                "robots_txt_blocked": self.robots_skipped_count,
+                "sampled_out": self.sample_skipped_count,
+                "avg_response_time_ms": round(sum(getattr(self, 'response_times', [0])) / max(len(getattr(self, 'response_times', [1])), 1), 2),
+                "status_codes": self._get_status_code_distribution(),
             },
             "issues_summary": summary_issues,
             "issues_detail": detail_issues,
@@ -1119,6 +1277,12 @@ def load_config(path):
         result["check_thin_content"] = c.get("checkThinContent", True)
         result["min_content_words"] = c.get("minContentWords", 200)
         result["sitemap_validation"] = c.get("sitemapValidation", True)
+        result["check_schema_types"] = c.get("checkSchemaTypes", True)
+        result["check_https"] = c.get("checkHttps", True)
+        result["check_mixed_content"] = c.get("checkMixedContent", True)
+        result["check_link_depth"] = c.get("checkLinkDepth", True)
+        result["max_link_depth"] = c.get("maxLinkDepth", 3)
+        result["page_type_patterns"] = c.get("pageTypePatterns", {})
     return result
 
 

@@ -106,7 +106,7 @@ echo  RUNNING FULL SITE AUDIT
 echo ============================================================
 echo.
 
-echo [1/4] Running Technical SEO Crawl...
+echo [1/4] Running Technical SEO Crawl...  ^(%time%^)
 python src\crawler\seo_audit.py --config config.json --cwd reports --output crawl_results.json
 if errorlevel 1 (
     echo Crawl failed. Check errors above.
@@ -114,7 +114,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [2/4] Running Core Web Vitals Speed Audit...
+echo [2/4] Running Core Web Vitals Speed Audit...  ^(%time%^)
 node src\speed\seo-speed-audit.js --config config.json --output reports\speed_results.json
 if errorlevel 1 (
     echo Speed audit failed. Check errors above.
@@ -122,7 +122,7 @@ if errorlevel 1 (
 )
 
 echo.
-echo [3/4] Merging results and building unified report...
+echo [3/4] Merging results and building unified report...  ^(%time%^)
 node src\report\merge-report.js --config config.json --crawl reports\crawl_results.json --speed reports\speed_results.json --output reports
 if errorlevel 1 (
     echo Report generation failed. Check errors above.
@@ -130,10 +130,10 @@ if errorlevel 1 (
 )
 
 echo.
-echo [4/4] Building AI analysis prompt...
+echo [4/4] Building AI analysis prompt...  ^(%time%^)
 node src\ai\analyze.js --config config.json
 echo.
-echo Done! Reports saved to: reports\
+echo Done! Reports saved to: reports\  ^(%time%^)
 dir /b reports\*.html 2>nul
 goto end_script
 

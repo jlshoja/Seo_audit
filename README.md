@@ -78,6 +78,10 @@ and a prioritized 30-day action plan.
 | | `checkThinContent` | Word-count based thin content detection |
 | | `minContentWords` | Threshold for thin content |
 | | `sitemapValidation` | Sitemap XML health / lastmod validation |
+| | `checkHttps` | HTTPS enforcement + HSTS header checks |
+| | `checkMixedContent` | Detect HTTP resources loaded on HTTPS pages |
+| | `checkLinkDepth` | Flag pages deeper than `maxLinkDepth` clicks from homepage |
+| | `maxLinkDepth` | Max recommended clicks-from-home (default 3) |
 | `speed` | `auditMode` | `light` (perf only) or `full` (perf + SEO + a11y + best-practices) |
 | | `formFactor` | `mobile` or `desktop` |
 | | `samplesPerCategory` | How many pages to Lighthouse-test per URL category |
@@ -95,6 +99,7 @@ The tool is built to mirror the **seo-audit skill** output format:
 - **On-page SEO findings** — titles, meta descriptions, headings, images, internal links.
 - **Content findings** — thin content, soft 404s.
 - **Speed & Core Web Vitals** — per-page table with LCP/INP/CLS/TBT/TTFB/FCP + chart.
+- **Crawl budget & efficiency** — discovered vs. crawled, crawl efficiency %, robots/sampling skips, avg response time, status-code distribution.
 - **Prioritized action plan** — critical fixes, high-impact improvements, quick wins.
 
 ### What requires human judgment (not measurable by code)
