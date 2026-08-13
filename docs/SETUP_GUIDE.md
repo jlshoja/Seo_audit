@@ -3,6 +3,9 @@
 This guide takes a brand-new machine from nothing to a full SEO audit report. It is written
 for **Windows** (the primary supported OS) with notes for macOS/Linux where they differ.
 
+> **Not technical?** Skip the jargon — use the **[Simple Non-Technical Guide →](SIMPLE_GUIDE.md)**
+> (plain language, double-click-only).
+
 > Short on time? Do steps 1–5 below, then double-click `run.bat` and pick mode **1**.
 
 ---

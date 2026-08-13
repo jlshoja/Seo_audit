@@ -10,6 +10,8 @@ Everything runs locally on your Windows PC — no VPS, no paid service.
 
 > **New here?** Read the step-by-step **[How to Use guide →](docs/HOW_TO_USE.md)** and the
 > complete **[Setup & Running guide →](docs/SETUP_GUIDE.md)** (fresh-machine install, versions, troubleshooting).
+>
+> **Not technical?** Start with the **[Simple Non-Technical Guide →](docs/SIMPLE_GUIDE.md)** — plain language, no coding.
 
 ## Project layout
 
