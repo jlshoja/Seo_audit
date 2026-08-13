@@ -5,10 +5,14 @@ A practical, step-by-step guide for running an SEO audit on your website.
 ## What you need
 
 - **Windows PC**
-- **Node.js 18+** — https://nodejs.org
+- **Node.js 20+** — https://nodejs.org
 - **Python 3.9+** — https://python.org
 - A **Google Chrome** install (used by Lighthouse for speed tests)
 - An internet connection (for crawling + first-time package install)
+
+> New machine? Follow the **[Complete Setup & Running Guide →](SETUP_GUIDE.md)** first —
+> it covers prerequisites, dependency install, the `npm run doctor` environment check, and
+> end-to-end troubleshooting.
 
 ---
 

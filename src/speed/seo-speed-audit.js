@@ -31,6 +31,28 @@ const outputArg = argValue("--output", true);
 const deviceArg = argValue("--device", true);
 const auditModeArg = argValue("--audit", true);
 
+if (args.includes("--help") || args.includes("-h")) {
+  console.log(`
+SEO Audit Pro - Core Web Vitals Speed Tool (Lighthouse)
+
+Usage:
+  node src/speed/seo-speed-audit.js [--config config.json] [options]
+
+Options:
+  --config <path>   Config file to read (default: ./config.json)
+  --url <url>       Test a single URL instead of reading the sitemap
+  --output <path>   Where to write the JSON report (default: reports/speed_results.json)
+  --device <d>      mobile | desktop (overrides config speed.formFactor)
+  --audit <m>       light | full (overrides config speed.auditMode)
+  --help, -h        Show this help and exit
+
+Examples:
+  node src/speed/seo-speed-audit.js --config config.json
+  node src/speed/seo-speed-audit.js --url https://example.com --device mobile --audit full
+`);
+  process.exit(0);
+}
+
 // ---------- Config loading ----------
 function loadConfig() {
   const raw = fs.readFileSync(configPath, "utf-8");

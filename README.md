@@ -8,7 +8,8 @@ An integrated, Windows-local SEO audit tool that combines two engines into one p
 
 Everything runs locally on your Windows PC — no VPS, no paid service.
 
-> **New here?** Read the step-by-step **[How to Use guide →](docs/HOW_TO_USE.md)**.
+> **New here?** Read the step-by-step **[How to Use guide →](docs/HOW_TO_USE.md)** and the
+> complete **[Setup & Running guide →](docs/SETUP_GUIDE.md)** (fresh-machine install, versions, troubleshooting).
 
 ## Project layout
 
@@ -34,7 +35,7 @@ All results are written to a single `reports/` folder at the project root.
 
 ## Quick start
 
-1. Install **Node.js 18+** (https://nodejs.org) and **Python 3.9+** (https://python.org) if you don't have them.
+1. Install **Node.js 20+** (https://nodejs.org) and **Python 3.9+** (https://python.org) if you don't have them.
 2. Edit **`config.json`** and set your site: `site.baseUrl` and `site.sitemapUrl`.
 3. Double-click **`run.bat`**, pick mode `1` (Full Audit).
 

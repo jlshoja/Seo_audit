@@ -11,7 +11,8 @@
     "ai": "node src/ai/analyze.js --config config.json",
     "full": "npm run crawl && npm run speed && npm run report",
     "audit": "npm run crawl && npm run speed && npm run report && npm run ai",
-    "test": "node --experimental-vm-modules src/speed/seo-speed-audit.js --help"
+    "doctor": "node scripts/doctor.mjs",
+    "test": "node --check src/report/merge-report.js && node --check src/speed/seo-speed-audit.js && node --check src/ai/analyze.js && node --check scripts/doctor.mjs"
   },
   "dependencies": {
     "chart.js": "^4.4.4",
